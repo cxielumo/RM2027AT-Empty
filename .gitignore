@@ -1,0 +1,37 @@
+# CMake build output
+/build/
+/cmake-build-*/
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+compile_commands.json
+
+# Keil MDK build output and per-user settings
+project/MDK_V5/objects/
+project/MDK_V5/Debug/
+project/MDK_V5/Release/
+project/MDK_V5/*.uvguix.*
+project/MDK_V5/*.uvoptx
+project/MDK_V5/*.dep
+project/MDK_V5/*.bak
+
+# Compiler and linker artifacts
+*.o
+*.obj
+*.d
+*.crf
+*.axf
+*.elf
+*.hex
+*.bin
+*.map
+*.lst
+*.log
+
+# Editor and OS files
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
+Thumbs.db
