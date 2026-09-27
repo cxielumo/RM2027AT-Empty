@@ -1,0 +1,21 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug RM2027AT with OpenOCD",
+            "type": "cortex-debug",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "executable": "${workspaceFolder}/build/Debug/RM2027AT.elf",
+            "servertype": "openocd",
+            "serverpath": "C:/OpenOCD/bin/openocd.exe",
+            "configFiles": [
+                "${workspaceFolder}/openocd.cfg"
+            ],
+            "gdbPath": "C:/Program Files/Arm/GNU Toolchain mingw-w64-x86_64-arm-none-eabi/bin/arm-none-eabi-gdb.exe",
+            "preLaunchTask": "构建 Debug",
+            "runToEntryPoint": "robot_main",
+            "rtos": "FreeRTOS"
+        }
+    ]
+}

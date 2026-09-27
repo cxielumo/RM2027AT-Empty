@@ -28,14 +28,25 @@
 #include "at32f423_wk_config.h"
 #include "wk_adc.h"
 #include "wk_can.h"
-#include "wk_i2c.h"
 #include "wk_tmr.h"
 #include "wk_usart.h"
+#include "wk_dma.h"
 #include "wk_gpio.h"
 #include "wk_system.h"
 
 /* private includes ----------------------------------------------------------*/
 /* add user code begin private includes */
+
+#include "bsp.h"
+#include "os.h"
+
+void bsp_init(void);
+void dbus_init(void);
+void motor_tt_init(void);
+void servo_init(void);
+
+extern volatile uint8_t usart6_rx_dma_buffer[128];
+extern void robot_main(void *args);
 
 /* add user code end private includes */
 
@@ -56,6 +67,9 @@
 
 /* private variables ---------------------------------------------------------*/
 /* add user code begin private variables */
+
+static StaticTask_t robot_main_control;
+static StackType_t robot_main_stack[768];
 
 /* add user code end private variables */
 
@@ -111,10 +125,6 @@ int main(void)
   /* nvic config. */
   wk_nvic_config();
 
-  /* timebase config for
-     void wk_delay_ms(uint32_t delay); */
-  wk_timebase_init();
-
   /* init gpio function. */
   wk_gpio_config();
 
@@ -135,9 +145,6 @@ int main(void)
 
   /* init can2 function. */
   wk_can2_init();
-
-  /* init i2c2 function. */
-  wk_i2c2_init();
 
   /* init tmr1 function. */
   wk_tmr1_init();
@@ -160,7 +167,33 @@ int main(void)
   /* init tmr14 function. */
   wk_tmr14_init();
 
+  /* init dma1 channel1 */
+  wk_dma1_channel1_init();
+  /* config dma channel transfer parameter */
+  /* user need to modify define values DMAx_CHANNELy_XXX_BASE_ADDR 
+     and DMAx_CHANNELy_BUFFER_SIZE in at32xxx_wk_config.h */
+  wk_dma_channel_config(DMA1_CHANNEL1, 
+                        (uint32_t)&USART6->dt, 
+                        DMA1_CHANNEL1_MEMORY_BASE_ADDR, 
+                        DMA1_CHANNEL1_BUFFER_SIZE);
+  dma_channel_enable(DMA1_CHANNEL1, TRUE);
+
   /* add user code begin 2 */
+
+  bsp_init();
+
+  motor_tt_init();
+  servo_init();
+  dbus_init();
+
+  if (xTaskCreateStatic(robot_main, "robot_main", 768U, NULL,
+                        (UBaseType_t)4U, robot_main_stack,
+                        &robot_main_control) == NULL)
+  {
+    panic(FAULT_INIT);
+  }
+  vTaskStartScheduler();
+  panic(FAULT_SCHEDULER);
 
   /* add user code end 2 */
 

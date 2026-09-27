@@ -1,0 +1,30 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "构建 Debug",
+            "type": "shell",
+            "command": "cmake --build build/Debug",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": [
+                "$gcc"
+            ]
+        },
+        {
+            "label": "烧录 Debug",
+            "type": "shell",
+            "command": "C:/OpenOCD/bin/openocd.exe",
+            "args": [
+                "-f",
+                "openocd.cfg",
+                "-c",
+                "program build/Debug/RM2027AT.elf verify reset exit"
+            ],
+            "dependsOn": "构建 Debug",
+            "problemMatcher": []
+        }
+    ]
+}

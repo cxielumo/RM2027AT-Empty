@@ -64,8 +64,12 @@ void UsageFault_Handler(void);
 void DebugMon_Handler(void);
 void SysTick_Handler(void);
 
-void TMR1_BRK_TMR9_IRQHandler(void);
-void TMR1_TRG_HALL_TMR11_IRQHandler(void);
+void DMA1_Channel1_IRQHandler(void);
+void CAN1_RX0_IRQHandler(void);
+void CAN1_SE_IRQHandler(void);
+void CAN2_RX0_IRQHandler(void);
+void CAN2_SE_IRQHandler(void);
+void USART6_IRQHandler(void);
 /* add user code begin exported functions */
 
 /* add user code end exported functions */

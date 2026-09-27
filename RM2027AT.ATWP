@@ -58,23 +58,11 @@
             <ModeSub name="Debug interface" value="SWD"/>
         </Mode>
     </DEBUG>
-    <I2C2>
-        <Mode>
-            <ModeSub name="I2C" value="I2C"/>
-        </Mode>
-        <Parameters>
-            <ParametersSub name="Timing_Configuration_Value" value="0x60E02E2E"/>
-            <ParametersSub name="DualAddressMode" value="DISABLE"/>
-        </Parameters>
-    </I2C2>
     <SYSTEM>
         <Mode>
-            <ModeSub name="Time_Base" value="TMR9"/>
+            <ModeSub name="Time_Base" value=""/>
             <ModeSub name="SysTick_Interrupt" value="TRUE"/>
         </Mode>
-        <Parameters>
-            <ParametersSub name="Delay_Mode" value="Interrupt"/>
-        </Parameters>
     </SYSTEM>
     <TMR1>
         <Mode>
@@ -140,7 +128,12 @@
             <ModeSub name="Mode" value="Asynchronous"/>
         </Mode>
         <Parameters>
-            <ParametersSub name="RealBaudRate" value="115207"/>
+            <ParametersSub name="BaudRate" value="100000"/>
+            <ParametersSub name="RealBaudRate" value="100000"/>
+            <ParametersSub name="Databitnum" value="USART_DATA_9BITS"/>
+            <ParametersSub name="Parityselection" value="USART_PARITY_EVEN"/>
+            <ParametersSub name="STOPbitnum" value="USART_STOP_2_BIT"/>
+            <ParametersSub name="RXPolarityReverse" value="TRUE"/>
         </Parameters>
     </USART6>
     <USART7>
@@ -151,37 +144,49 @@
             <ParametersSub name="RealBaudRate" value="115207"/>
         </Parameters>
     </USART7>
+    <DMA>
+        <USART6_RX>
+            <ParametersSub name="Instance" value="DMA1_Channel1"/>
+            <ParametersSub name="Mode" value="TRUE"/>
+            <ParametersSub name="Priority" value="DMA_PRIORITY_VERY_HIGH"/>
+            <ParametersSub name="SyncRequestCount" value="1"/>
+            <ParametersSub name="RequestCount" value="1"/>
+            <ParametersSub name="Interrupt_FDT" value="ENABLE"/>
+            <ParametersSub name="Interrupt_HDT" value="ENABLE"/>
+            <ParametersSub name="Interrupt_DTERR" value="ENABLE"/>
+        </USART6_RX>
+    </DMA>
     <NVIC>
         <SVC_Handler>1;0;0;0;0;0</SVC_Handler>
         <PendSV_Handler>1;15;0;0;0;0</PendSV_Handler>
         <SysTick_Handler>1;15;0;0;0;1</SysTick_Handler>
         <FLASH_IRQHandler>0;5;0;0;0;0</FLASH_IRQHandler>
         <CRM_IRQHandler>0;5;0;0;0;0</CRM_IRQHandler>
+        <DMA1_Channel1_IRQHandler>1;5;0;0;0;1</DMA1_Channel1_IRQHandler>
         <ADC1_IRQHandler>0;5;0;0;0;0</ADC1_IRQHandler>
         <CAN1_TX_IRQHandler>0;5;0;0;0;0</CAN1_TX_IRQHandler>
-        <CAN1_RX0_IRQHandler>0;5;0;0;0;0</CAN1_RX0_IRQHandler>
+        <CAN1_RX0_IRQHandler>1;5;0;0;0;1</CAN1_RX0_IRQHandler>
         <CAN1_RX1_IRQHandler>0;5;0;0;0;0</CAN1_RX1_IRQHandler>
-        <CAN1_SE_IRQHandler>0;5;0;0;0;0</CAN1_SE_IRQHandler>
-        <TMR1_BRK_TMR9_IRQHandler>1;5;0;0;0;1</TMR1_BRK_TMR9_IRQHandler>
+        <CAN1_SE_IRQHandler>1;5;0;0;0;1</CAN1_SE_IRQHandler>
+        <TMR1_BRK_TMR9_IRQHandler>0;5;0;0;0;0</TMR1_BRK_TMR9_IRQHandler>
         <TMR1_OVF_TMR10_IRQHandler>0;5;0;0;0;0</TMR1_OVF_TMR10_IRQHandler>
-        <TMR1_TRG_HALL_TMR11_IRQHandler>1;5;0;0;0;1</TMR1_TRG_HALL_TMR11_IRQHandler>
+        <TMR1_TRG_HALL_TMR11_IRQHandler>0;5;0;0;0;0</TMR1_TRG_HALL_TMR11_IRQHandler>
         <TMR1_CH_IRQHandler>0;5;0;0;0;0</TMR1_CH_IRQHandler>
         <TMR2_GLOBAL_IRQHandler>0;5;0;0;0;0</TMR2_GLOBAL_IRQHandler>
         <TMR3_GLOBAL_IRQHandler>0;5;0;0;0;0</TMR3_GLOBAL_IRQHandler>
         <TMR4_GLOBAL_IRQHandler>0;5;0;0;0;0</TMR4_GLOBAL_IRQHandler>
-        <I2C2_EVT_IRQHandler>0;5;0;0;0;0</I2C2_EVT_IRQHandler>
-        <I2C2_ERR_IRQHandler>0;5;0;0;0;0</I2C2_ERR_IRQHandler>
         <USART1_IRQHandler>0;5;0;0;0;0</USART1_IRQHandler>
         <TMR12_GLOBAL_IRQHandler>0;5;0;0;0;0</TMR12_GLOBAL_IRQHandler>
         <TMR13_GLOBAL_IRQHandler>0;5;0;0;0;0</TMR13_GLOBAL_IRQHandler>
         <TMR14_GLOBAL_IRQHandler>0;5;0;0;0;0</TMR14_GLOBAL_IRQHandler>
         <CAN2_TX_IRQHandler>0;5;0;0;0;0</CAN2_TX_IRQHandler>
-        <CAN2_RX0_IRQHandler>0;5;0;0;0;0</CAN2_RX0_IRQHandler>
+        <CAN2_RX0_IRQHandler>1;5;0;0;0;1</CAN2_RX0_IRQHandler>
         <CAN2_RX1_IRQHandler>0;5;0;0;0;0</CAN2_RX1_IRQHandler>
-        <CAN2_SE_IRQHandler>0;5;0;0;0;0</CAN2_SE_IRQHandler>
-        <USART6_IRQHandler>0;5;0;0;0;0</USART6_IRQHandler>
+        <CAN2_SE_IRQHandler>1;5;0;0;0;1</CAN2_SE_IRQHandler>
+        <USART6_IRQHandler>1;5;0;0;0;1</USART6_IRQHandler>
         <FPU_IRQHandler>0;5;0;0;0;0</FPU_IRQHandler>
         <USART7_IRQHandler>0;5;0;0;0;0</USART7_IRQHandler>
+        <DMAMUX_IRQHandler>0;0;0;0;0;0</DMAMUX_IRQHandler>
     </NVIC>
     <ClockConfiguration>
         <rtcsel>0</rtcsel>
@@ -229,7 +234,6 @@
         <PinSub pinname="PB1" signalname="TMR3_CH4" signaltype="3"/>
         <PinSub pinname="PB2" signalname="TMR2_CH4" signaltype="3"/>
         <PinSub pinname="PB10" signalname="TMR2_CH3" signaltype="3"/>
-        <PinSub pinname="PB11" signalname="I2C2_SDA" signaltype="3"/>
         <PinSub pinname="PF8" signalname="USART7_TX" signaltype="2"/>
         <PinSub pinname="PB12" signalname="CAN2_RX" signaltype="2"/>
         <PinSub pinname="PB13" signalname="CAN2_TX" signaltype="2"/>
@@ -241,7 +245,6 @@
         <PinSub pinname="PA11" signalname="CAN1_RX" signaltype="2"/>
         <PinSub pinname="PA12" signalname="CAN1_TX" signaltype="2"/>
         <PinSub pinname="PA13" signalname="DEBUG_JTMS_SWDIO" signaltype="2"/>
-        <PinSub pinname="PF6" signalname="I2C2_SCL" signaltype="3"/>
         <PinSub pinname="PA14" signalname="DEBUG_JTCK_SWCLK" signaltype="2"/>
         <PinSub pinname="PA15" signalname="USART1_TX" signaltype="2"/>
         <PinSub pinname="PB3" signalname="USART1_RX" signaltype="2"/>
@@ -273,7 +276,6 @@
         <RankSub RankNum="2" FixPosFlag="TRUE" FuncName="wk_periph_clock_config" InstanceName="CRM" CodeSection="config periph clock" MainDoNotCallFlag="FALSE"/>
         <RankSub RankNum="6" FixPosFlag="TRUE" FuncName="systick_interrupt_config" InstanceName="SYSTEM" CodeSection="systick_interrupt" MainDoNotCallFlag="FALSE"/>
         <RankSub RankNum="7" FixPosFlag="TRUE" FuncName="wk_nvic_config" InstanceName="NVIC" CodeSection="config nvic" MainDoNotCallFlag="FALSE"/>
-        <RankSub RankNum="8" FixPosFlag="TRUE" FuncName="wk_timebase_init" InstanceName="SYSTEM" CodeSection="config timebase" MainDoNotCallFlag="FALSE"/>
         <RankSub RankNum="9" FixPosFlag="TRUE" FuncName="wk_gpio_config" InstanceName="GPIO" CodeSection="gpio function" MainDoNotCallFlag="FALSE"/>
         <RankSub RankNum="10" FixPosFlag="FALSE" FuncName="wk_adc1_init" InstanceName="ADC1" CodeSection="adc1 function" MainDoNotCallFlag="FALSE"/>
         <RankSub RankNum="29" FixPosFlag="FALSE" FuncName="wk_usart1_init" InstanceName="USART1" CodeSection="usart1 function" MainDoNotCallFlag="FALSE"/>
@@ -281,7 +283,6 @@
         <RankSub RankNum="35" FixPosFlag="FALSE" FuncName="wk_usart7_init" InstanceName="USART7" CodeSection="usart7 function" MainDoNotCallFlag="FALSE"/>
         <RankSub RankNum="39" FixPosFlag="FALSE" FuncName="wk_can1_init" InstanceName="CAN1" CodeSection="can1 function" MainDoNotCallFlag="FALSE"/>
         <RankSub RankNum="40" FixPosFlag="FALSE" FuncName="wk_can2_init" InstanceName="CAN2" CodeSection="can2 function" MainDoNotCallFlag="FALSE"/>
-        <RankSub RankNum="49" FixPosFlag="FALSE" FuncName="wk_i2c2_init" InstanceName="I2C2" CodeSection="i2c2 function" MainDoNotCallFlag="FALSE"/>
         <RankSub RankNum="56" FixPosFlag="FALSE" FuncName="wk_tmr1_init" InstanceName="TMR1" CodeSection="tmr1 function" MainDoNotCallFlag="FALSE"/>
         <RankSub RankNum="57" FixPosFlag="FALSE" FuncName="wk_tmr2_init" InstanceName="TMR2" CodeSection="tmr2 function" MainDoNotCallFlag="FALSE"/>
         <RankSub RankNum="58" FixPosFlag="FALSE" FuncName="wk_tmr3_init" InstanceName="TMR3" CodeSection="tmr3 function" MainDoNotCallFlag="FALSE"/>
@@ -289,5 +290,6 @@
         <RankSub RankNum="65" FixPosFlag="FALSE" FuncName="wk_tmr12_init" InstanceName="TMR12" CodeSection="tmr12 function" MainDoNotCallFlag="FALSE"/>
         <RankSub RankNum="66" FixPosFlag="FALSE" FuncName="wk_tmr13_init" InstanceName="TMR13" CodeSection="tmr13 function" MainDoNotCallFlag="FALSE"/>
         <RankSub RankNum="67" FixPosFlag="FALSE" FuncName="wk_tmr14_init" InstanceName="TMR14" CodeSection="tmr14 function" MainDoNotCallFlag="FALSE"/>
+        <RankSub RankNum="11" FixPosFlag="FALSE" FuncName="wk_dma1_channel1_init" InstanceName="DMA1_Channel1" CodeSection="dma1_channel1_init" MainDoNotCallFlag="FALSE"/>
     </FunctionRankInfo>
 </Root>

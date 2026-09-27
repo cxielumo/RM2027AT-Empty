@@ -126,14 +126,20 @@ void wk_usart6_init(void)
   gpio_init(GPIOA, &gpio_init_struct);
 
   /* configure param */
-  usart_init(USART6, 115200, USART_DATA_8BITS, USART_STOP_1_BIT);
+  usart_init(USART6, 100000, USART_DATA_9BITS, USART_STOP_2_BIT);
   usart_transmitter_enable(USART6, TRUE);
   usart_receiver_enable(USART6, TRUE);
-  usart_parity_selection_config(USART6, USART_PARITY_NONE);
+  usart_parity_selection_config(USART6, USART_PARITY_EVEN);
+
+  usart_dma_receiver_enable(USART6, TRUE);
 
   usart_hardware_flow_control_set(USART6, USART_HARDWARE_FLOW_NONE);
 
+  usart_receive_pin_polarity_reverse(USART6, TRUE);
+
   /* add user code begin usart6_init 2 */
+
+  usart_interrupt_enable(USART6, USART_IDLE_INT, TRUE);
 
   /* add user code end usart6_init 2 */
 

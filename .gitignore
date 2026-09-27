@@ -1,21 +1,12 @@
-# CMake build output
-/build/
-/cmake-build-*/
-CMakeCache.txt
-CMakeFiles/
-cmake_install.cmake
-compile_commands.json
+# MDK-ARM
+project/MDK_V5/*
+!project/MDK_V5/RM2027AT.uvoptx
+!project/MDK_V5/RM2027AT.uvprojx
+!project/MDK_V5/startup_at32f423.s
+!project/MDK_V5/ArteryTek.AT32F423_DFP.2.1.4.pack
 
-# Keil MDK build output and per-user settings
-project/MDK_V5/objects/
-project/MDK_V5/Debug/
-project/MDK_V5/Release/
-project/MDK_V5/*.uvguix.*
-project/MDK_V5/*.uvoptx
-project/MDK_V5/*.dep
-project/MDK_V5/*.bak
-
-# Compiler and linker artifacts
+# BUILD
+build/
 *.o
 *.obj
 *.d
@@ -28,10 +19,18 @@ project/MDK_V5/*.bak
 *.lst
 *.log
 
-# Editor and OS files
-.vscode/
-.idea/
+# VSCode
+.vscode/*
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# OS
 *.swp
 *~
 .DS_Store
 Thumbs.db
+
+# ATWP
+project/inc/backup
+project/src/backup

@@ -26,9 +26,18 @@
 
 /* includes ------------------------------------------------------------------*/
 #include "at32f423_int.h"
-#include "wk_system.h"
 /* private includes ----------------------------------------------------------*/
 /* add user code begin private includes */
+
+#include "FreeRTOS.h"
+#include "task.h"
+#include "bsp.h"
+#include "can.h"
+#include "uart.h"
+
+/* Internal driver hook kept out of the public UART application API. */
+void uart_irq_handler(uart_id_t id);
+void can_irq_handler(can_bus_t bus);
 
 /* add user code end private includes */
 
@@ -188,40 +197,149 @@ void SysTick_Handler(void)
 
   /* add user code begin SysTick_IRQ 1 */
 
+  if (xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED)
+  {
+    xPortSysTickHandler();
+  }
+
   /* add user code end SysTick_IRQ 1 */
 }
 
 /**
-  * @brief  this function handles TMR1 Brake and TMR9 handler.
+  * @brief  this function handles DMA1 Channel 1 handler.
   * @param  none
   * @retval none
   */
-void TMR1_BRK_TMR9_IRQHandler(void)
+void DMA1_Channel1_IRQHandler(void)
 {
-  /* add user code begin TMR1_BRK_TMR9_IRQ 0 */
+  /* add user code begin DMA1_Channel1_IRQ 0 */
 
-  /* add user code end TMR1_BRK_TMR9_IRQ 0 */
+  uint8_t dma_event = 0U;
 
-  wk_timebase_handler();
-  /* add user code begin TMR1_BRK_TMR9_IRQ 1 */
+  /* add user code end DMA1_Channel1_IRQ 0 */
 
-  /* add user code end TMR1_BRK_TMR9_IRQ 1 */
+  if(dma_interrupt_flag_get(DMA1_FDT1_FLAG) != RESET)
+  {   
+    /* add user code begin DMA1_FDT1_FLAG */
+    dma_flag_clear(DMA1_FDT1_FLAG);
+    dma_event = 1U;
+    /* add user code end DMA1_FDT1_FLAG */ 
+  }
+
+  if(dma_interrupt_flag_get(DMA1_HDT1_FLAG) != RESET)
+  {   
+    /* add user code begin DMA1_HDT1_FLAG */
+    dma_flag_clear(DMA1_HDT1_FLAG);
+    dma_event = 1U;
+    /* add user code end DMA1_HDT1_FLAG */ 
+  }
+
+  if(dma_interrupt_flag_get(DMA1_DTERR1_FLAG) != RESET)
+  {   
+    /* add user code begin DMA1_DTERR1_FLAG */
+    dma_flag_clear(DMA1_DTERR1_FLAG);
+    dma_event = 1U;
+    /* add user code end DMA1_DTERR1_FLAG */ 
+  }
+
+  /* add user code begin DMA1_Channel1_IRQ 1 */
+
+  if (dma_event != 0U)
+  {
+    uart_irq_handler(UART_6);
+  }
+
+  /* add user code end DMA1_Channel1_IRQ 1 */
 }
 
 /**
-  * @brief  this function handles TMR1 Trigger and hall and TMR11 handler.
+  * @brief  this function handles CAN1 RX0 handler.
   * @param  none
   * @retval none
   */
-void TMR1_TRG_HALL_TMR11_IRQHandler(void)
+void CAN1_RX0_IRQHandler(void)
 {
-  /* add user code begin TMR1_TRG_HALL_TMR11_IRQ 0 */
+  /* add user code begin CAN1_RX0_IRQ 0 */
 
-  /* add user code end TMR1_TRG_HALL_TMR11_IRQ 0 */
+  /* add user code end CAN1_RX0_IRQ 0 */
 
-  /* add user code begin TMR1_TRG_HALL_TMR11_IRQ 1 */
+  /* add user code begin CAN1_RX0_IRQ 1 */
 
-  /* add user code end TMR1_TRG_HALL_TMR11_IRQ 1 */
+  can_irq_handler(CAN_BUS_1);
+
+  /* add user code end CAN1_RX0_IRQ 1 */
+}
+
+/**
+  * @brief  this function handles CAN1 SE handler.
+  * @param  none
+  * @retval none
+  */
+void CAN1_SE_IRQHandler(void)
+{
+  /* add user code begin CAN1_SE_IRQ 0 */
+
+  /* add user code end CAN1_SE_IRQ 0 */
+
+  /* add user code begin CAN1_SE_IRQ 1 */
+
+  can_irq_handler(CAN_BUS_1);
+
+  /* add user code end CAN1_SE_IRQ 1 */
+}
+
+/**
+  * @brief  this function handles CAN2 RX0 handler.
+  * @param  none
+  * @retval none
+  */
+void CAN2_RX0_IRQHandler(void)
+{
+  /* add user code begin CAN2_RX0_IRQ 0 */
+
+  /* add user code end CAN2_RX0_IRQ 0 */
+
+  /* add user code begin CAN2_RX0_IRQ 1 */
+
+  can_irq_handler(CAN_BUS_2);
+
+  /* add user code end CAN2_RX0_IRQ 1 */
+}
+
+/**
+  * @brief  this function handles CAN2 SE handler.
+  * @param  none
+  * @retval none
+  */
+void CAN2_SE_IRQHandler(void)
+{
+  /* add user code begin CAN2_SE_IRQ 0 */
+
+  /* add user code end CAN2_SE_IRQ 0 */
+
+  /* add user code begin CAN2_SE_IRQ 1 */
+
+  can_irq_handler(CAN_BUS_2);
+
+  /* add user code end CAN2_SE_IRQ 1 */
+}
+
+/**
+  * @brief  this function handles USART6 handler.
+  * @param  none
+  * @retval none
+  */
+void USART6_IRQHandler(void)
+{
+  /* add user code begin USART6_IRQ 0 */
+
+  /* add user code end USART6_IRQ 0 */
+
+  /* add user code begin USART6_IRQ 1 */
+
+  uart_irq_handler(UART_6);
+
+  /* add user code end USART6_IRQ 1 */
 }
 
 /* add user code begin 1 */

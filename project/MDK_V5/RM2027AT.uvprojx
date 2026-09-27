@@ -10,8 +10,8 @@
       <TargetName>RM2027AT</TargetName>
       <ToolsetNumber>0x4</ToolsetNumber>
       <ToolsetName>ARM-ADS</ToolsetName>
-      <pCCUsed>5060960::V5.06 update 7 (build 960)::.\ARMCC</pCCUsed>
-      <uAC6>0</uAC6>
+      <pCCUsed>6240000::V6.24::ARMCLANG</pCCUsed>
+      <uAC6>1</uAC6>
       <TargetOption>
         <TargetCommonOption>
           <Device>-AT32F423CCT7</Device>
@@ -185,6 +185,7 @@
             <RvdsVP>2</RvdsVP>
             <RvdsMve>0</RvdsMve>
             <RvdsCdeCp>0</RvdsCdeCp>
+            <nBranchProt>0</nBranchProt>
             <hadIRAM2>0</hadIRAM2>
             <hadIROM2>0</hadIROM2>
             <StupSel>8</StupSel>
@@ -312,7 +313,7 @@
           </ArmAdsMisc>
           <Cads>
             <interw>1</interw>
-            <Optim>1</Optim>
+            <Optim>2</Optim>
             <oTime>0</oTime>
             <SplitLS>0</SplitLS>
             <OneElfS>1</OneElfS>
@@ -321,14 +322,14 @@
             <PlainCh>0</PlainCh>
             <Ropi>0</Ropi>
             <Rwpi>0</Rwpi>
-            <wLevel>2</wLevel>
+            <wLevel>3</wLevel>
             <uThumb>0</uThumb>
             <uSurpInc>1</uSurpInc>
             <uC99>1</uC99>
             <uGnu>0</uGnu>
             <useXO>0</useXO>
-            <v6Lang>1</v6Lang>
-            <v6LangP>1</v6LangP>
+            <v6Lang>5</v6Lang>
+            <v6LangP>3</v6LangP>
             <vShortEn>1</vShortEn>
             <vShortWch>1</vShortWch>
             <v6Lto>0</v6Lto>
@@ -338,7 +339,7 @@
               <MiscControls></MiscControls>
               <Define>AT32F423CCT7, USE_STDPERIPH_DRIVER, AT_START_F423_V1</Define>
               <Undefine></Undefine>
-              <IncludePath>..\..\libraries\drivers\inc;..\..\libraries\cmsis\cm4\core_support;..\..\libraries\cmsis\cm4\device_support;..\inc;..\..\Algorithm\Inc;..\..\Bsp\Inc;..\..\Module\Inc;..\..\App\Inc</IncludePath>
+              <IncludePath>..\..\libraries\drivers\inc;..\..\libraries\cmsis\cm4\core_support;..\..\libraries\cmsis\cm4\device_support;..\inc;..\..\Algorithm\Inc;..\..\Bsp\Inc;..\..\Components\Inc;..\..\Application\Inc;..\..\ThirdParty\FreeRTOS\MDK-ARM;..\..\ThirdParty\FreeRTOS\Config;..\..\ThirdParty\FreeRTOS\Source\include</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -413,11 +414,6 @@
               <FilePath>..\src\wk_can.c</FilePath>
             </File>
             <File>
-              <FileName>wk_i2c.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\src\wk_i2c.c</FilePath>
-            </File>
-            <File>
               <FileName>wk_tmr.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\src\wk_tmr.c</FilePath>
@@ -428,39 +424,14 @@
               <FilePath>..\src\wk_usart.c</FilePath>
             </File>
             <File>
+              <FileName>wk_dma.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\src\wk_dma.c</FilePath>
+            </File>
+            <File>
               <FileName>wk_gpio.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\src\wk_gpio.c</FilePath>
-            </File>
-          </Files>
-        </Group>
-        <Group>
-          <GroupName>algorithm</GroupName>
-          <Files>
-            <File>
-              <FileName>ahrs.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\Algorithm\Src\ahrs.c</FilePath>
-            </File>
-            <File>
-              <FileName>angle.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\Algorithm\Src\angle.c</FilePath>
-            </File>
-            <File>
-              <FileName>low_pass.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\Algorithm\Src\low_pass.c</FilePath>
-            </File>
-            <File>
-              <FileName>pid.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\Algorithm\Src\pid.c</FilePath>
-            </File>
-            <File>
-              <FileName>ramp.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\Algorithm\Src\ramp.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -483,11 +454,6 @@
               <FilePath>..\..\libraries\drivers\src\at32f423_gpio.c</FilePath>
             </File>
             <File>
-              <FileName>at32f423_i2c.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\libraries\drivers\src\at32f423_i2c.c</FilePath>
-            </File>
-            <File>
               <FileName>at32f423_usart.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\..\libraries\drivers\src\at32f423_usart.c</FilePath>
@@ -501,6 +467,11 @@
               <FileName>at32f423_adc.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\..\libraries\drivers\src\at32f423_adc.c</FilePath>
+            </File>
+            <File>
+              <FileName>at32f423_dma.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\libraries\drivers\src\at32f423_dma.c</FilePath>
             </File>
             <File>
               <FileName>at32f423_debug.c</FileName>
@@ -541,6 +512,231 @@
               <FileName>startup_at32f423.s</FileName>
               <FileType>2</FileType>
               <FilePath>.\startup_at32f423.s</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>ThirdParty/FreeRTOS</GroupName>
+          <Files>
+            <File>
+              <FileName>croutine.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\ThirdParty\FreeRTOS\Source\croutine.c</FilePath>
+            </File>
+            <File>
+              <FileName>event_groups.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\ThirdParty\FreeRTOS\Source\event_groups.c</FilePath>
+            </File>
+            <File>
+              <FileName>list.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\ThirdParty\FreeRTOS\Source\list.c</FilePath>
+            </File>
+            <File>
+              <FileName>queue.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\ThirdParty\FreeRTOS\Source\queue.c</FilePath>
+            </File>
+            <File>
+              <FileName>stream_buffer.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\ThirdParty\FreeRTOS\Source\stream_buffer.c</FilePath>
+            </File>
+            <File>
+              <FileName>tasks.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\ThirdParty\FreeRTOS\Source\tasks.c</FilePath>
+            </File>
+            <File>
+              <FileName>timers.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\ThirdParty\FreeRTOS\Source\timers.c</FilePath>
+            </File>
+            <File>
+              <FileName>heap_4.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\ThirdParty\FreeRTOS\Source\portable\MemMang\heap_4.c</FilePath>
+            </File>
+            <File>
+              <FileName>port.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\ThirdParty\FreeRTOS\MDK-ARM\port.c</FilePath>
+            </File>
+            <File>
+              <FileName>FreeRTOSConfig.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\ThirdParty\FreeRTOS\MDK-ARM\FreeRTOSConfig.h</FilePath>
+            </File>
+            <File>
+              <FileName>portmacro.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\ThirdParty\FreeRTOS\MDK-ARM\portmacro.h</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Algorithm</GroupName>
+          <Files>
+            <File>
+              <FileName>math_utils.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\Algorithm\Inc\math_utils.h</FilePath>
+            </File>
+            <File>
+              <FileName>pid.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\Algorithm\Inc\pid.h</FilePath>
+            </File>
+            <File>
+              <FileName>ramp.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\Algorithm\Inc\ramp.h</FilePath>
+            </File>
+            <File>
+              <FileName>ringBuffer.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\Algorithm\Inc\ringBuffer.h</FilePath>
+            </File>
+            <File>
+              <FileName>pid.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\Algorithm\Src\pid.c</FilePath>
+            </File>
+            <File>
+              <FileName>ramp.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\Algorithm\Src\ramp.c</FilePath>
+            </File>
+            <File>
+              <FileName>ringBuffer.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\Algorithm\Src\ringBuffer.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Bsp</GroupName>
+          <Files>
+            <File>
+              <FileName>adc.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\Bsp\Inc\adc.h</FilePath>
+            </File>
+            <File>
+              <FileName>bsp.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\Bsp\Inc\bsp.h</FilePath>
+            </File>
+            <File>
+              <FileName>can.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\Bsp\Inc\can.h</FilePath>
+            </File>
+            <File>
+              <FileName>gpio.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\Bsp\Inc\gpio.h</FilePath>
+            </File>
+            <File>
+              <FileName>led.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\Bsp\Inc\led.h</FilePath>
+            </File>
+            <File>
+              <FileName>os.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\Bsp\Inc\os.h</FilePath>
+            </File>
+            <File>
+              <FileName>pwm.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\Bsp\Inc\pwm.h</FilePath>
+            </File>
+            <File>
+              <FileName>uart.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\Bsp\Inc\uart.h</FilePath>
+            </File>
+            <File>
+              <FileName>adc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\Bsp\Src\adc.c</FilePath>
+            </File>
+            <File>
+              <FileName>bsp.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\Bsp\Src\bsp.c</FilePath>
+            </File>
+            <File>
+              <FileName>can.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\Bsp\Src\can.c</FilePath>
+            </File>
+            <File>
+              <FileName>led.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\Bsp\Src\led.c</FilePath>
+            </File>
+            <File>
+              <FileName>os.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\Bsp\Src\os.c</FilePath>
+            </File>
+            <File>
+              <FileName>pwm.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\Bsp\Src\pwm.c</FilePath>
+            </File>
+            <File>
+              <FileName>uart.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\Bsp\Src\uart.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Components</GroupName>
+          <Files>
+            <File>
+              <FileName>dbus.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\Components\Inc\dbus.h</FilePath>
+            </File>
+            <File>
+              <FileName>motor_tt.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\Components\Inc\motor_tt.h</FilePath>
+            </File>
+            <File>
+              <FileName>servo.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\Components\Inc\servo.h</FilePath>
+            </File>
+            <File>
+              <FileName>dbus.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\Components\Src\dbus.c</FilePath>
+            </File>
+            <File>
+              <FileName>motor_tt.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\Components\Src\motor_tt.c</FilePath>
+            </File>
+            <File>
+              <FileName>servo.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\Components\Src\servo.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Application</GroupName>
+          <Files>
+            <File>
+              <FileName>robot_main.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\Application\Src\robot_main.c</FilePath>
             </File>
           </Files>
         </Group>

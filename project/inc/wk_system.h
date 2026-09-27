@@ -31,11 +31,6 @@ extern "C" {
 
 #include "at32f423.h"
 
-void wk_timebase_init(void);
-void wk_timebase_handler(void);
-uint32_t wk_timebase_get(void);
-void wk_delay_ms(uint32_t delay);
-
 error_status systick_interrupt_config(uint32_t nHz);
 
 #ifdef __cplusplus
