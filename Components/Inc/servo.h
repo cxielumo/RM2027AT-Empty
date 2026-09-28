@@ -16,16 +16,6 @@ typedef enum {
   LAST_SERVO
 } servo_id_t;
 
-typedef struct {
-    uint32_t pulse_min_us;
-    uint32_t pulse_max_us;
-    uint32_t initial_pulse_us;
-    float angle_min_deg;
-    float angle_max_deg;
-    bool invert;
-    bool calibrated;
-} servo_config_t;
-
 void servo_enable(servo_id_t id);
 void servo_disable(servo_id_t id);
 

@@ -634,11 +634,6 @@
               <FilePath>..\..\Bsp\Inc\can.h</FilePath>
             </File>
             <File>
-              <FileName>gpio.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\..\Bsp\Inc\gpio.h</FilePath>
-            </File>
-            <File>
               <FileName>led.h</FileName>
               <FileType>5</FileType>
               <FilePath>..\..\Bsp\Inc\led.h</FilePath>
