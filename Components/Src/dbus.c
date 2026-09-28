@@ -2,6 +2,7 @@
 
 #include <stddef.h>
 
+#include "at32f423_usart.h"
 #include "FreeRTOS.h"
 #include "task.h"
 #include "math_utils.h"
@@ -148,6 +149,21 @@ static void dbus_task(void *args)
             publish_frame(frame.data, frame.timestamp_ms);
         }
     }
+}
+
+void dbus_useUartInstead(bool use_uart)
+{
+    confirm_state was_enabled = USART6->ctrl1_bit.uen ? TRUE : FALSE;
+
+    usart_enable(USART6, FALSE);
+    usart_parity_selection_config(USART6, USART_PARITY_NONE);
+    usart_init(USART6, 100000,
+               use_uart ? USART_DATA_8BITS : USART_DATA_9BITS,
+               USART_STOP_2_BIT);
+    usart_parity_selection_config(USART6,
+                                  use_uart ? USART_PARITY_NONE : USART_PARITY_EVEN);
+    usart_receive_pin_polarity_reverse(USART6, use_uart ? FALSE : TRUE);
+    usart_enable(USART6, was_enabled);
 }
 
 void dbus_init(void)

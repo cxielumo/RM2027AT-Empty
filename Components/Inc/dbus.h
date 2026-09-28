@@ -41,4 +41,11 @@ typedef struct {
 
 int dbus_get(dbus_t *dbus);
 
+/* Call after wk_usart6_init(), before starting DBUS reception/tasks.
+ * true: normal TTL UART RX at 100000 baud, 8N2 (PC simulator).
+ * false: inverted DBUS RX at 100000 baud, 8E2 (DR16, default).
+ * Both modes use the same 18-byte payload and idle frame boundary.
+ */
+void dbus_useUartInstead(bool use_uart);
+
 #endif

@@ -39,6 +39,7 @@
 
 #include "bsp.h"
 #include "os.h"
+#include "dbus.h"
 
 void bsp_init(void);
 void dbus_init(void);
@@ -184,6 +185,7 @@ int main(void)
 
   motor_tt_init();
   servo_init();
+  dbus_useUartInstead(true);
   dbus_init();
 
   if (xTaskCreateStatic(robot_main, "robot_main", 768U, NULL,
