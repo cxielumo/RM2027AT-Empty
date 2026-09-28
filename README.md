@@ -31,5 +31,7 @@ Application → Components → Bsp → ThirdParty + ATWP生成
 
 ## 构建入口
 
+FreeRTOS V11.3.1 源码已作为普通目录提交，直接下载 GitHub ZIP 即包含内核，无需初始化子模块。
+
 - **CMake / GCC**：根目录提供 `CMakePresets.json`，可用 `cmake --preset Debug` 配置、`cmake --build --preset Debug` 构建；Release 对应 `--preset Release`。工具链定义在 `cmake/gcc-arm-none-eabi.cmake`。
 - **Keil**：使用 `project/MDK_V5/RM2027AT.uvprojx` 打开工程。
