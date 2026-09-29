@@ -9,7 +9,6 @@ void robot_main(void *args)
 {
     (void)args;
 
-    dbus_useUartInstead(true);
     while (1) {
         dbus_get(&remote);
 

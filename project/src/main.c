@@ -185,8 +185,8 @@ int main(void)
 
   motor_tt_init();
   servo_init();
-  dbus_useUartInstead(true);
   dbus_init();
+  /* Optional PC simulator mode: dbus_useUartInstead(true); */
 
   if (xTaskCreateStatic(robot_main, "robot_main", 768U, NULL,
                         (UBaseType_t)4U, robot_main_stack,

@@ -179,6 +179,8 @@ void dbus_init(void)
         panic(FAULT_ASSERT);
     }
 
+    dbus_useUartInstead(false);
+
     dbus_task_handle = xTaskCreateStatic(
         dbus_task, "dbus_task", DBUS_TASK_STACK_WORDS, NULL,
         (UBaseType_t)DBUS_TASK_PRIORITY, dbus_task_stack,
