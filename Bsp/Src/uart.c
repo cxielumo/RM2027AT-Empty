@@ -25,6 +25,44 @@ static uint8_t free_queue_storage[UART_FRAME_SLOT_COUNT * sizeof(uint8_t)];
 static QueueHandle_t ready_queue;
 static QueueHandle_t free_queue;
 
+typedef struct {
+    uart_id_t id;
+    uart_callback_t callback;
+    void *context;
+} uart_registration_t;
+static uart_registration_t uart_registration;
+static TaskHandle_t uart_callback_handle;
+static StaticTask_t uart_callback_control;
+static StackType_t uart_callback_stack[384];
+static bool uart_registered;
+
+static void uart_callback_task(void *args)
+{
+    uart_frame_t frame;
+    (void)args;
+    for (;;) {
+        if (uart_receiveFrame(UART_6, &frame, UINT32_MAX) == 0)
+            uart_registration.callback(&frame, uart_registration.context);
+    }
+}
+
+int uart_register(uart_id_t id, uart_callback_t callback, void *context)
+{
+    const uart_registration_t registration = { id, callback, context };
+    const uart_registration_t *config = &registration;
+    int result = -1;
+    if (config->id != UART_6 || config->callback == NULL) return -1;
+    taskENTER_CRITICAL();
+    if (!uart_registered && ready_queue != NULL) {
+        uart_registration = *config;
+        uart_callback_handle = xTaskCreateStatic(uart_callback_task, "uart_rx",
+            384, NULL, 5, uart_callback_stack, &uart_callback_control);
+        if (uart_callback_handle != NULL) { uart_registered = true; result = 0; }
+    }
+    taskEXIT_CRITICAL();
+    return result;
+}
+
 static uint16_t dma_read_position;
 static int8_t active_slot = -1;
 static bool discard_until_idle;
@@ -252,6 +290,7 @@ size_t uart_read(uart_id_t id, uint8_t *data, size_t capacity)
 int uart_receiveFrame(uart_id_t id, uart_frame_t *out,
                       uint32_t timeout_ms)
 {
+    if (uart_registered && xTaskGetCurrentTaskHandle() != uart_callback_handle) return -1;
     TickType_t timeout_ticks = 0U;
     uint8_t slot;
 

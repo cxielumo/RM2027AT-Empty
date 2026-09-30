@@ -1,6 +1,6 @@
 # Algorithm / Bsp / Components API 设计说明
 
-日期：2026-09-27。状态：设计说明与当前源码并存。Algorithm 的 PID、ramp、ringBuffer 和 math_utils 已存在；Bsp 当前包含 PWM、CAN、UART、LED、OS、ADC 等实现；Components 已实现 DBUS，motor_tt 与 servo 接口存在但默认不可启用，motor_dji 为空设备表实现。本文后续各节保留完整目标 API 设计，不能据此推断每个设计能力都已在当前代码中实现。
+日期：2026-09-27。状态：设计说明与当前源码并存。Algorithm 的 PID、ramp、ringBuffer 和 math_utils 已存在；Bsp 当前包含 PWM、CAN、UART、LED、OS、ADC 等实现；Components 已实现 DBUS，motor_tt 与 servo 接口存在但默认不可启用，motor_dji 已实现三种型号协议，通过配置结构体注册。本文后续各节保留完整目标 API 设计，不能据此推断每个设计能力都已在当前代码中实现。
 
 依据：[框架设计方案](框架设计方案.md)、[功能引脚对应](功能引脚对应.md)。当前可见头文件与源文件数为 Algorithm 7 个、Bsp 15 个、Components 10 个，共 32 个；I2C 仅保留在文档设计中，暂不创建文件或实现。每节定义头文件的公共 API 与源文件的实现责任；math_utils 仅保留头文件，不增加框架模块。代码按 C99 编写，不修改工程默认 C 标准。本文仅核对文件与接口状态，未据此声称已构建或测试。
 
@@ -9,7 +9,7 @@
 - PID、ramp、ringBuffer、math_utils 已有源文件或头文件；Bsp 的 PWM、CAN、UART、LED、OS、ADC 模块及 Components 的 DBUS 已有实现。文件存在不表示硬件行为已在板上验证。
 - `motor_tt` 当前识别六路映射，但因 RZ7889 驱动真值表、换向安全规则及逐电机标定尚未确认，`enable` 和占空比控制遇到未配置状态时直接忽略；保持默认关闭。
 - `servo` 的六路接口存在，但脉宽、角度和初始位置标定尚未配置，默认不允许启用或输出。
-- `motor_dji` 当前是合法的空设备表；没有配置电机 ID、CAN 总线、反馈/控制协议，不会启动设备处理任务或发送控制帧。
+- `motor_dji` 当前通过 motor_dji_register 复制配置结构体注册电机；已实现 M2006/C610、M3508/C620 和 GM6020 电流控制协议，默认未注册实际设备，不会启动设备处理任务或发送控制帧。
 - I2C 明确暂不实现，也不创建 `i2c.h` / `i2c.c` 文件。此处描述的是当前源码状态；其余章节中超出已实现范围的函数签名与行为仍属设计约定，不能视为已有实现。
 
 ## 1. 公共约定
@@ -279,9 +279,9 @@ int bsp_get_can_desc(can_bus_t bus, can_desc_t *out);
 
 - send/receive均非阻塞，每次处理一帧。bus只通过参数指定，不在帧内重复存储；can.h不依赖os线程句柄。
 - send验证ID、帧型及dlc≤8后尝试写入空闲硬件邮箱；无空邮箱或参数无效时忽略，不缓存、不自动排队。数据在返回前复制，timestamp_ms在发送时忽略。
-- receive从指定总线静态队列取帧，空队列或错误时返回-1，成功时返回0并携带ISR接收时间戳。每总线默认32帧，单消费者；队列满丢新帧，内部累计溢出计数用于调试，不增加公共统计接口。
+- receive从指定总线静态队列取帧，空队列返回CAN_RECEIVE_EMPTY (-1)，错误返回CAN_RECEIVE_ERROR (-2)，成功时返回0并携带ISR接收时间戳。每总线默认32帧，单消费者；队列满丢新帧，内部累计溢出计数用于调试，不因新增统计改变控制状态。
 - IRQ只搬运RX帧、清标志和处理硬件错误；不绑定组件任务、不解析协议。发送完成不需要推进软件队列。硬件滤波由固定配置决定。
-- bus-off时驱动中止尚未完成的硬件发送，记录错误并按固定策略恢复，不重放旧帧。未处理的总线错误阻止send并忽略该次请求；receive优先向唯一消费者返回-1，使其撤销该总线旧目标。已上总线的帧不能撤回，远端停机不作保证。
+- bus-off时驱动中止尚未完成的硬件发送，记录错误并按固定策略恢复，不重放旧帧。未处理的总线错误阻止send并忽略该次请求；receive优先向唯一消费者返回CAN_RECEIVE_ERROR (-2)，使其撤销该总线旧目标。已上总线的帧不能撤回，远端停机不作保证。
 - 无任务绑定、状态查询、latest发送或取消软件待发接口。寄存器/队列并发保护与恢复过程留在驱动内部，不能无限等待。
 
 ### 3.5 uart.h / uart.c
@@ -411,53 +411,43 @@ typedef enum {
     DBUS_SWITCH_DOWN
 } dbus_switch_t;
 typedef struct {
-    int16_t channel_raw[4];
     float channel[4];
     dbus_switch_t switch_left, switch_right;
     int16_t mouse_x, mouse_y, mouse_z;
     bool mouse_left, mouse_right;
     uint16_t keys;
-    uint16_t wheel_raw;
+    float wheel;
     uint32_t timestamp_ms;
     uint32_t sequence;
     bool valid;
     bool online;
-} dbus_snapshot_t;
-typedef struct {
-    int16_t center_raw;
-    uint16_t span_raw, deadzone_raw;
-    uint32_t timeout_ms;
-} dbus_config_t;
+} dbus_t;
 
-void dbus_init(void);
-int dbus_get_snapshot(dbus_snapshot_t *out);
+int dbus_get(dbus_t *out);
+void dbus_useUartInstead(bool use_uart);
 ```
 
-- 配置是 dbus.c 顶部的 static const，init 不接收外部配置。span>0、deadzone<span、timeout>0，协议合法范围与配置范围需分别验证。
-- channel_raw 是协议原始通道数值，channel 是减中心、应用死区并除以 span 的 [-1,1] 值。合法协议范围内的端点可限幅；非法原始值拒绝整帧。死区内为0，死区外不重缩放。
-- 左/右开关的报文字段对应须依遥控器实物确认，不能仅凭位位置猜测。keys 为协议位图，头文件按已确认协议提供键位掩码；wheel_raw 保留原始值，不预设归一化语义。
-- 私有任务通过 uart_receive_frame(UART_6,...) 接收，18字节长度、错误标志、开关及通道范围全部通过后发布，sequence递增。不能把结构检查描述为CRC校验。
+- DBUS 解码参数使用实现内部常量：中位 1024、幅度 660、死区 33、离线超时 100 ms；init 不接收外部配置。
+- channel 是减中心、应用死区并除以 span 的 [-1,1] 值。合法协议范围内的端点可限幅；非法原始值拒绝整帧。死区内为0，死区外不重缩放。
+- 左/右开关的报文字段对应须依遥控器实物确认，不能仅凭位位置猜测。keys 为协议位图，头文件按已确认协议提供键位掩码；wheel 按中心1024、跨度660和死区33归一化，限幅至[-1,1]，死区外不重新缩放。DBUS_KEY_W/S/D/A/SHIFT/CTRL/Q/E/R/F/G/Z/X/C/V/B 为对应协议位掩码，可直接与keys进行按位运算。
+- 私有任务通过 uart_receiveFrame(UART_6,...) 接收，18字节长度、错误标志、开关及通道范围全部通过后发布，sequence递增。不能把结构检查描述为CRC校验。
 - 初次未接收：valid=false、online=false、数值清零/开关UNKNOWN。掉线保留最后合法数据用于诊断，online=false；valid表示曾有合法数据，不能代替online。
 - 默认100ms掉线；snapshot查询依据当前时间重新判断online，避免线程调度延迟产生过期在线状态。查询初始化后正常返回，即使无有效数据也通过标志表达。
 - 任务静态栈384 words、优先级5；UART帧队列提供等待和唤醒，超时等待有界。快照短临界区复制，不直接关闭其他组件输出。
 
 ### 4.3 motor_dji.h / motor_dji.c
 
-**文件：** `Components/Inc/motor_dji.h` 提供配置类型、反馈与原始电流命令；`Components/Src/motor_dji.c` 持有静态设备表、协议规则、成组缓冲和 motor_dji_task。
+**文件：** `Components/Inc/motor_dji.h` 提供配置类型、反馈与原始电流命令；`Components/Src/motor_dji.c` 持有注册配置、协议规则、成组缓冲和 motor_dji_task。
 
 ```c
-typedef uint8_t motor_dji_id_t; /* 1..配置数量，0无效 */
 typedef enum {
     MOTOR_DJI_M2006=1, MOTOR_DJI_M3508, MOTOR_DJI_GM6020
 } motor_dji_model_t;
 typedef struct {
-    motor_dji_id_t id;
+    uint8_t id;
     can_bus_t bus;
     motor_dji_model_t model;
-    uint8_t protocol_id;
-    int16_t raw_current_limit;
-    uint32_t feedback_timeout_ms;
-    uint32_t command_timeout_ms;
+    bool invert;
 } motor_dji_config_t;
 typedef struct {
     uint16_t encoder_raw;
@@ -469,26 +459,28 @@ typedef struct {
     uint32_t timestamp_ms;
     uint32_t sequence;
     bool valid, online, enabled, angle_continuous;
-} motor_dji_snapshot_t;
+} motor_dji_status_t;
+typedef struct {
+    volatile motor_dji_status_t measure;
+    uint8_t slot;
+} motor_dji_t;
 
-void motor_dji_init(void);
-int motor_dji_get_snapshot(motor_dji_id_t id, motor_dji_snapshot_t *out);
-void motor_dji_enable(motor_dji_id_t id);
-void motor_dji_stop(motor_dji_id_t id);
-void motor_dji_set_raw_current(motor_dji_id_t id, int16_t raw_current);
+int motor_dji_register(motor_dji_t *motor, const motor_dji_config_t *config);
+void motor_dji_stop(const motor_dji_t *motor);
+void motor_dji_setCurrent(const motor_dji_t *motor, int16_t raw_current);
 ```
 
-- 逻辑id与CAN协议id分离；配置只存 motor_dji.c 静态表，应用不运行期注册设备。未确定实际型号与协议的设备不加入表；空表为合法配置，不创建无工作任务。
-- model枚举表示计划支持范围，具体型号的反馈字段、ID/命令槽和原始电流上限须按参考实现及设备协议落实。尚未实现的型号查询返回-1，控制请求忽略；不能把枚举存在当作协议已确认。
-- 初始化校验逻辑id唯一、同总线反馈ID唯一、分组槽不冲突、限值为正且不超过型号上限。成组ID由型号和protocol_id推导，禁止应用随意填裸命令ID绕过校验。
+- id 直接表示硬件电调编号；注册通过 bus、model、id 组合识别硬件，控制/查询通过返回的 motor_dji_t 句柄指针定位设备，不同总线或无协议冲突的不同型号可使用相同编号。应用通过配置结构体调用 motor_dji_register，驱动复制配置到静态容量16的存储中。首次成功注册创建服务任务，可运行期追加，禁止ISR调用；不支持注销或覆盖。未注册设备时不创建任务。注册失败返回-1且不修改已有设备和输出句柄，成功返回0并写入句柄。对象须在驱动生命周期内保持有效且地址稳定，不支持复制、移动或重复注册；配置复制后不依赖调用者存储。应用可直接读取 motor->measure，多字段及64位角度一致性由应用使用任务临界区读取保证。
+- 已实现 M2006/C610（电流 ±10000）、M3508/C620（电流 ±16384）、GM6020（电流 ±16384）。GM6020 要求开启支持该功能的固件电流环。配置包含 id、bus、model、invert；invert 默认 false，反向时命令和带符号反馈均翻转，encoder_raw 保留物理值，16位反馈反向溢出时饱和至32767；电流限值由型号推导，反馈和命令超时统一100ms。配置及接线示例见 [大疆电机驱动](大疆电机驱动.md)。
+- 注册校验硬件id范围、同总线反馈ID唯一、分组槽不冲突、电流限值按型号自动确定。成组ID由型号和id推导，禁止应用随意填裸命令ID绕过校验。
 - 每个组8字节四个有符号16位命令，高字节在前；未配置、未使能、反馈离线或命令超时的槽填0。双总线组状态相互独立；组件每轮依据最新目标重新打包，调用can_send(bus, &frame)。邮箱BUSY时放弃该次发送，下一轮重取最新目标，不保留旧帧队列；各命令组轮转尝试，避免固定顺序使后续组长期饥饿。
-- set只接受已使能且反馈在线的设备，否则忽略；命令越限时忽略，不静默裁剪。任务是CAN提交的唯一写者，应用仅修改目标缓冲。
-- enable 要求已收到有效在线反馈；清零目标和旧命令时间，等待新的set。stop立即在组件状态中撤销使能、清零目标；服务任务下一轮按新目标提交全组值，不能把同组其他设备误清零。stop不保证邮箱旧帧撤回或远端立即停机。
-- 默认反馈/命令超时均100ms。超时撤销使能、清零目标，恢复反馈后须显式enable+新命令。CAN bus-off也执行此规则，不自动恢复旧电流。
-- encoder_raw范围0..8191，speed_rpm/current_raw保持协议原始符号/单位；没有减速比信息时不称为输出轴转速。温度字段按型号有效性标注。
+- set只接受反馈在线的设备并激活输出，否则忽略；命令越限时忽略，不静默裁剪。任务是CAN提交的唯一写者，应用仅修改目标缓冲。
+- setCurrent 要求已收到有效在线反馈，并更新目标、命令时间和 enabled 状态。stop立即在组件状态中撤销使能、清零目标；服务任务下一轮按新目标提交全组值，不能把同组其他设备误清零。stop不保证邮箱旧帧撤回或远端立即停机。
+- 默认反馈/命令超时均100ms。超时撤销使能、清零目标，恢复反馈后须提交新电流命令。CAN bus-off也执行此规则，不自动恢复旧电流。
+- encoder_raw范围0..8191，speed_rpm/current_raw使用协议原始单位，符号按invert转换；没有减速比信息时不称为输出轴转速。温度字段按型号有效性标注。
 - 首帧angle_counts=0，以后差值折回[-4096,4095]累计；首次/重连首帧angle_continuous=false，后续连续合法帧可为true。此标志仅表示当前接收段内连续，不表示跨掉线保持位置；超过半圈/采样仍有不可检测歧义。用宽整数并处理累计溢出，不依赖有符号溢出行为。
-- 无合法反馈valid=false；离线保留最后反馈并online=false。查询复制一致快照且即时检查超时；不直接从查询函数发送CAN。
-- 静态任务优先级5、栈768 words，默认1ms周期；每轮按限定帧数预算调用can_receive读取两总线，再服务最新命令和超时，随后实际阻塞等待下个周期，不能无限排空。can_receive返回-1时按策略撤销该总线全部电机使能并清零目标。栈和控制块由.c持有。
+- 无合法反馈valid=false；离线保留最后反馈并online=false。在线和超时状态由后台任务维护，应用直接读取 motor->measure。
+- 静态任务优先级5、栈768 words，使用xTaskDelayUntil按1ms周期调度（低tick频率时至少1 tick），错过周期时阻塞1 tick并重设基准；每轮按限定帧数预算调用can_receive读取两总线，再服务最新命令和超时，随后等待下个周期，超期时实际阻塞1 tick，不能无限排空。can_receive返回CAN_RECEIVE_EMPTY (-1)时结束本轮接收；返回CAN_RECEIVE_ERROR (-2)时撤销该总线全部电机使能并清零目标，BSP同时清空故障前排队帧。栈和控制块由.c持有。
 
 ### 4.4 motor_tt.h / motor_tt.c
 
@@ -570,7 +562,7 @@ int servo_get_state(servo_id_t id, servo_state_t *out);
 | i2c.h / i2c.c（预留） | 暂不实现，首版不占用运行期资源 | 无 |
 | led.c | 初始化状态 | 无 |
 | dbus.c | 参数、快照、静态栈与TCB | dbus_task 384 words |
-| motor_dji.c | 设备表、反馈/目标/组状态、静态栈与TCB | motor_dji_task 768 words；空配置不开 |
+| motor_dji.c | 注册配置、反馈/目标/组状态、静态栈与TCB | motor_dji_task 768 words；空配置不开 |
 | motor_tt.c / servo.c | 各六项配置和状态 | 无 |
 
 CAN接收队列及驱动同步对象须计入实施时RAM预算；此表不是链接结果或栈安全证明。私有函数、线程入口、协议解析器不在公共头文件中暴露。
@@ -590,12 +582,12 @@ if (dbus_get_snapshot(&input) == 0 && input.valid && input.online) {
 /* 遥控恢复后不会在此片段中自动重新使能。 */
 ```
 
-Application可直接调用os/led/uart基础接口，设备控制使用Components，计算使用Algorithm。配置在各组件.c集中修改；公共.h的配置类型用于明确字段与约束，不意味着必须新增运行时配置接口。
+Application可直接调用os/led/uart基础接口，设备控制使用Components，计算使用Algorithm。大疆电机配置由应用构造结构体并注册；其他组件的配置仍在各组件.c集中修改。
 
 ## 6. 实现前需要落实的接口细节
 
 1. RZ7889停机/换向真值表及允许PWM范围，决定motor_tt私有映射和pwm关闭电平。
-2. 实际DJI设备清单及型号协议，决定motor_dji静态表、字段有效性与分组ID，不能仅凭型号名称推定全部参数。
+2. 实际DJI设备清单及型号协议，决定应用的motor_dji注册配置、字段有效性与分组ID，不能仅凭型号名称推定全部参数。
 3. 六舵机标定、遥控器开关字段和滚轮解释；未确认通道保持禁用或原始数据形式。
 4. AT32定时器双输入统一提交机制、实际时钟及中断优先级；影响底层实现，不开放应用任意改频接口。
 5. OS适配与厂商库实际符号冲突检查：公共名若与厂商函数冲突，优先采用具体操作名称调整并同步本文，禁止通过脆弱宏覆盖厂商符号。

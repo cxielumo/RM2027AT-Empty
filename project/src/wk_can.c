@@ -86,10 +86,10 @@ void wk_can1_init(void)
 
   /*can_baudrate_setting-------------------------------------------------------------*/ 
   /*set baudrate = pclk/(baudrate_div *(1 + bts1_size + bts2_size))------------------*/ 
-  can_baudrate_struct.baudrate_div = 15;                       /*value: 1~0xFFF*/
+  can_baudrate_struct.baudrate_div = 5;                       /*value: 1~0xFFF*/
   can_baudrate_struct.rsaw_size = CAN_RSAW_1TQ;                /*value: 1~4*/
-  can_baudrate_struct.bts1_size = CAN_BTS1_8TQ;                /*value: 1~16*/
-  can_baudrate_struct.bts2_size = CAN_BTS2_1TQ;                /*value: 1~8*/
+  can_baudrate_struct.bts1_size = CAN_BTS1_11TQ;                /*value: 1~16*/
+  can_baudrate_struct.bts2_size = CAN_BTS2_3TQ;                /*value: 1~8*/
   can_baudrate_set(CAN1, &can_baudrate_struct);
 
   /*can_filter_0_config--------------------------------------------------------------*/
@@ -166,10 +166,10 @@ void wk_can2_init(void)
 
   /*can_baudrate_setting-------------------------------------------------------------*/ 
   /*set baudrate = pclk/(baudrate_div *(1 + bts1_size + bts2_size))------------------*/ 
-  can_baudrate_struct.baudrate_div = 15;                       /*value: 1~0xFFF*/
+  can_baudrate_struct.baudrate_div = 5;                       /*value: 1~0xFFF*/
   can_baudrate_struct.rsaw_size = CAN_RSAW_1TQ;                /*value: 1~4*/
-  can_baudrate_struct.bts1_size = CAN_BTS1_8TQ;                /*value: 1~16*/
-  can_baudrate_struct.bts2_size = CAN_BTS2_1TQ;                /*value: 1~8*/
+  can_baudrate_struct.bts1_size = CAN_BTS1_11TQ;                /*value: 1~16*/
+  can_baudrate_struct.bts2_size = CAN_BTS2_3TQ;                /*value: 1~8*/
   can_baudrate_set(CAN2, &can_baudrate_struct);
 
   /*can_filter_0_config--------------------------------------------------------------*/

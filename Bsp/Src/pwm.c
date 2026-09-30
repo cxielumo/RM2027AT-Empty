@@ -400,7 +400,7 @@ void pwm_disable(pwm_channel_t channel)
     pwm_irq_unlock(primask);
 }
 
-void pwm_disableAll(void)
+void pwm_shutdown(void)
 {
     uint8_t i;
     for (i = 0U; i < PWM_CHANNEL_COUNT; ++i) {

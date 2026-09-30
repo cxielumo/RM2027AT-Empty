@@ -51,8 +51,11 @@ set(RM2027AT_Framework_Src
     ${CMAKE_SOURCE_DIR}/Bsp/Src/os.c
     ${CMAKE_SOURCE_DIR}/Bsp/Src/pwm.c
     ${CMAKE_SOURCE_DIR}/Bsp/Src/uart.c
+    ${CMAKE_SOURCE_DIR}/Components/Src/daemon.c
     ${CMAKE_SOURCE_DIR}/Components/Src/dbus.c
     ${CMAKE_SOURCE_DIR}/Components/Src/motor_tt.c
+    ${CMAKE_SOURCE_DIR}/Components/Src/motor_dji.c
+    ${CMAKE_SOURCE_DIR}/Components/Src/motor.c
     ${CMAKE_SOURCE_DIR}/Components/Src/servo.c
     ${CMAKE_SOURCE_DIR}/Application/Src/robot_main.c
 )

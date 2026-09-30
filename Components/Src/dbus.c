@@ -1,4 +1,5 @@
 #include "dbus.h"
+#include "daemon.h"
 
 #include <stddef.h>
 
@@ -12,20 +13,13 @@
 #define DBUS_FRAME_SIZE       18U
 #define DBUS_PROTOCOL_MIN    (-660)
 #define DBUS_PROTOCOL_MAX      660
-#define DBUS_TASK_STACK_WORDS  384U
-#define DBUS_TASK_PRIORITY       5U
-#define DBUS_FRAME_WAIT_MS      10U
 
-static const dbus_config_t dbus_config = {
-    .center_raw = 1024,
-    .span_raw = 660U,
-    .deadzone_raw = 33U,
-    .timeout_ms = 100U
-};
+#define DBUS_CENTER_RAW  1024
+#define DBUS_SPAN_RAW    660U
+#define DBUS_DEADZONE_RAW 33U
+#define DBUS_TIMEOUT_MS  100U
 
-static StaticTask_t dbus_task_control;
-static StackType_t dbus_task_stack[DBUS_TASK_STACK_WORDS];
-static TaskHandle_t dbus_task_handle;
+static bool dbus_registered;
 static dbus_t dbus_snapshot;
 static bool dbus_init_called;
 
@@ -74,22 +68,21 @@ static int decode_frame(const uint8_t frame[DBUS_FRAME_SIZE],
 
     for (size_t i = 0U; i < 4U; ++i) {
         int16_t raw = (int16_t)((int32_t)channel_bits[i] -
-                                (int32_t)dbus_config.center_raw);
+                                (int32_t)DBUS_CENTER_RAW);
         float normalized;
 
         if (raw < DBUS_PROTOCOL_MIN || raw > DBUS_PROTOCOL_MAX) {
             return -1;
         }
 
-        normalized = (float)raw / (float)dbus_config.span_raw;
+        normalized = (float)raw / (float)DBUS_SPAN_RAW;
         if (!isfinite(normalized)) {
             panic(FAULT_ASSERT);
         }
-        decoded->channel_raw[i] = raw;
         decoded->channel[i] = clampf(
             deadzone(normalized,
-                     (float)dbus_config.deadzone_raw /
-                         (float)dbus_config.span_raw),
+                     (float)DBUS_DEADZONE_RAW /
+                         (float)DBUS_SPAN_RAW),
             -1.0f, 1.0f);
     }
 
@@ -111,7 +104,11 @@ static int decode_frame(const uint8_t frame[DBUS_FRAME_SIZE],
     decoded->mouse_left = (frame[12] != 0U);
     decoded->mouse_right = (frame[13] != 0U);
     decoded->keys = read_u16_le(&frame[14]);
-    decoded->wheel_raw = read_u16_le(&frame[16]);
+    decoded->wheel = clampf(
+        deadzone(((float)read_u16_le(&frame[16]) - (float)DBUS_CENTER_RAW) /
+                     (float)DBUS_SPAN_RAW,
+                 (float)DBUS_DEADZONE_RAW / (float)DBUS_SPAN_RAW),
+        -1.0f, 1.0f);
     decoded->valid = true;
     decoded->online = true;
     return 0;
@@ -133,21 +130,29 @@ static void publish_frame(const uint8_t frame[DBUS_FRAME_SIZE],
     taskEXIT_CRITICAL();
 }
 
-static void dbus_task(void *args)
+static void dbus_receive(const uart_frame_t *frame, void *context)
 {
-    uart_frame_t frame;
+    (void)context;
+    if (frame->length == DBUS_FRAME_SIZE && frame->error_flags == 0U)
+        publish_frame(frame->data, frame->timestamp_ms);
+}
 
-    (void)args;
-
+uint32_t dbus_waitData(void)
+{
+    uint32_t sequence, start;
+    if (!dbus_registered || xTaskGetSchedulerState() != taskSCHEDULER_RUNNING)
+        return UINT32_MAX;
+    taskENTER_CRITICAL();
+    sequence = dbus_snapshot.sequence;
+    start = os_getTime();
+    taskEXIT_CRITICAL();
     for (;;) {
-        bool received = (uart_receiveFrame(UART_6, &frame,
-                                           DBUS_FRAME_WAIT_MS) == 0);
-
-        if (received &&
-            (frame.length == DBUS_FRAME_SIZE) &&
-            (frame.error_flags == 0U)) {
-            publish_frame(frame.data, frame.timestamp_ms);
-        }
+        bool changed;
+        taskENTER_CRITICAL();
+        changed = dbus_snapshot.sequence != sequence;
+        taskEXIT_CRITICAL();
+        if (changed) return os_getTime() - start;
+        vTaskDelay(1);
     }
 }
 
@@ -173,21 +178,10 @@ void dbus_init(void)
     }
     dbus_init_called = true;
 
-    if ((dbus_config.span_raw == 0U) ||
-        (dbus_config.deadzone_raw >= dbus_config.span_raw) ||
-        (dbus_config.timeout_ms == 0U)) {
-        panic(FAULT_ASSERT);
-    }
-
     dbus_useUartInstead(false);
 
-    dbus_task_handle = xTaskCreateStatic(
-        dbus_task, "dbus_task", DBUS_TASK_STACK_WORDS, NULL,
-        (UBaseType_t)DBUS_TASK_PRIORITY, dbus_task_stack,
-        &dbus_task_control);
-    if (dbus_task_handle == NULL) {
-        panic(FAULT_INIT);
-    }
+    if (uart_register(UART_6, dbus_receive, NULL) != 0) panic(FAULT_INIT);
+    dbus_registered = true;
 }
 
 int dbus_get(dbus_t *out)
@@ -198,7 +192,7 @@ int dbus_get(dbus_t *out)
     if (out == NULL) {
         return -1;
     }
-    if (!dbus_init_called || (dbus_task_handle == NULL)) {
+    if (!dbus_init_called || !dbus_registered) {
         return -1;
     }
 
@@ -208,9 +202,12 @@ int dbus_get(dbus_t *out)
     now_ms = os_getTime();
 
     if (!snapshot.valid ||
-        ((uint32_t)(now_ms - snapshot.timestamp_ms) >= dbus_config.timeout_ms)) {
+        ((uint32_t)(now_ms - snapshot.timestamp_ms) >= DBUS_TIMEOUT_MS)) {
         snapshot.online = false;
     }
     *out = snapshot;
+    if (snapshot.valid && snapshot.online) {
+        daemon_reload();
+    }
     return 0;
 }

@@ -19,6 +19,10 @@ typedef struct {
     can_frame_t queue_storage[CAN_RX_QUEUE_LENGTH];
     volatile uint32_t rx_queue_dropped;
     volatile uint32_t rx_hardware_overruns;
+    volatile uint32_t tx_submitted;
+    volatile uint32_t tx_busy;
+    volatile uint32_t tx_errors;
+    volatile uint32_t tx_rejected;
     volatile bool error_pending;
 } can_context_t;
 
@@ -26,6 +30,58 @@ static can_context_t can_contexts[2] = {
     { .peripheral = CAN1 },
     { .peripheral = CAN2 }
 };
+
+#define CAN_REGISTRY_CAPACITY 16U
+typedef struct { can_frame_t frame; uint8_t registration; } can_event_t;
+typedef struct {
+    can_bus_t bus;
+    uint32_t id;
+    bool extended;
+    can_callback_t callback;
+    void *context;
+} can_registration_t;
+static can_registration_t can_registry[CAN_REGISTRY_CAPACITY];
+static size_t can_registry_count;
+static QueueHandle_t callback_queue;
+static StaticQueue_t callback_queue_control;
+static uint8_t callback_queue_storage[32U * sizeof(can_event_t)];
+static StaticTask_t callback_task_control;
+static StackType_t callback_task_stack[384];
+
+static void can_callback_task(void *args)
+{
+    can_event_t event;
+    (void)args;
+    for (;;) {
+        if (xQueueReceive(callback_queue, &event, portMAX_DELAY) == pdPASS) {
+            can_registration_t config = can_registry[event.registration];
+            config.callback(&event.frame, config.context);
+        }
+    }
+}
+
+int can_register(can_bus_t bus, uint32_t id, bool extended,
+                 can_callback_t callback, void *context)
+{
+    const can_registration_t registration = { bus, id, extended, callback, context };
+    const can_registration_t *config = &registration;
+    int result = -1;
+    if (config->callback == NULL ||
+        (unsigned int)config->bus >= LAST_CAN_BUS ||
+        config->id > (config->extended ? 0x1FFFFFFFU : 0x7FFU)) return -1;
+    taskENTER_CRITICAL();
+    if (callback_queue == NULL) goto done;
+    for (size_t i = 0; i < can_registry_count; ++i) {
+        if (can_registry[i].bus == config->bus && can_registry[i].id == config->id &&
+            can_registry[i].extended == config->extended) goto done;
+    }
+    if (can_registry_count == CAN_REGISTRY_CAPACITY) goto done;
+    can_registry[can_registry_count++] = *config;
+    result = 0;
+done:
+    taskEXIT_CRITICAL();
+    return result;
+}
 
 static can_context_t *can_context_get(can_bus_t bus)
 {
@@ -43,6 +99,13 @@ static uint32_t can_tick_to_ms(TickType_t tick)
 {
     return (uint32_t)(((uint64_t)tick * UINT64_C(1000)) /
                       (uint64_t)configTICK_RATE_HZ);
+}
+
+static void can_count(volatile uint32_t *counter)
+{
+    taskENTER_CRITICAL();
+    ++*counter;
+    taskEXIT_CRITICAL();
 }
 
 /* Observe errors from task context as well as the CAN IRQ entry. */
@@ -82,6 +145,14 @@ void can_init(void)
         }
     }
 
+    if (callback_queue == NULL) {
+        callback_queue = xQueueCreateStatic(32, sizeof(can_event_t),
+            callback_queue_storage, &callback_queue_control);
+        if (callback_queue == NULL || xTaskCreateStatic(can_callback_task,
+            "can_rx", 384, NULL, 5, callback_task_stack, &callback_task_control) == NULL)
+            panic(FAULT_INIT);
+    }
+
     /* wk_can1_init()/wk_can2_init() already configure clocks, pins, bitrate,
      * and the generated FIFO0 catch-all filters before this function runs. */
     can_interrupt_enable(CAN1,
@@ -104,14 +175,17 @@ void can_send(can_bus_t bus, const can_frame_t *frame)
     if ((context == NULL) || (frame == NULL) || (frame->dlc > 8U) ||
         ((frame->extended && (frame->id > UINT32_C(0x1FFFFFFF))) ||
          (!frame->extended && (frame->id > UINT32_C(0x7FF))))) {
+        if (context != NULL) can_count(&context->tx_rejected);
         return;
     }
     if (context->queue == NULL) {
+        can_count(&context->tx_errors);
         return;
     }
 
     bus_off = can_is_bus_off(context);
     if (bus_off || context->error_pending) {
+        can_count(&context->tx_errors);
         return;
     }
 
@@ -132,11 +206,14 @@ void can_send(can_bus_t bus, const can_frame_t *frame)
 
     mailbox = can_message_transmit(context->peripheral, &message);
     if (mailbox == CAN_TX_STATUS_NO_EMPTY) {
+        can_count(&context->tx_busy);
         return;
     }
     if (mailbox > CAN_TX_MAILBOX2) {
+        can_count(&context->tx_errors);
         return;
     }
+    can_count(&context->tx_submitted);
 }
 
 int can_receive(can_bus_t bus, can_frame_t *out)
@@ -145,18 +222,19 @@ int can_receive(can_bus_t bus, can_frame_t *out)
     BaseType_t received;
 
     if ((context == NULL) || (out == NULL)) {
-        return -1;
+        return CAN_RECEIVE_ERROR;
     }
     if (context->queue == NULL) {
-        return -1;
+        return CAN_RECEIVE_ERROR;
     }
 
     (void)can_is_bus_off(context);
     if (context->error_pending) {
         taskENTER_CRITICAL();
         context->error_pending = false;
+        (void)xQueueReset(context->queue);
         taskEXIT_CRITICAL();
-        return -1;
+        return CAN_RECEIVE_ERROR;
     }
 
     received = xQueueReceive(context->queue, out, (TickType_t)0U);
@@ -205,6 +283,20 @@ void can_irq_handler(can_bus_t bus)
             }
         }
         frame.timestamp_ms = can_tick_to_ms(xTaskGetTickCountFromISR());
+
+        bool routed = false;
+        for (size_t i = 0; i < can_registry_count; ++i) {
+            if (can_registry[i].bus == bus && can_registry[i].id == frame.id &&
+                can_registry[i].extended == frame.extended) {
+                can_event_t event = { .frame = frame, .registration = (uint8_t)i };
+                if (xQueueSendFromISR(callback_queue, &event,
+                                     &higher_priority_task_woken) != pdPASS)
+                    context->rx_queue_dropped++;
+                routed = true;
+                break;
+            }
+        }
+        if (routed) continue;
 
         if ((context->queue != NULL) &&
             (xQueueSendFromISR(context->queue, &frame,

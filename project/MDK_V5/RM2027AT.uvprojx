@@ -699,6 +699,21 @@
               <FilePath>..\..\Components\Inc\dbus.h</FilePath>
             </File>
             <File>
+              <FileName>motor.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\Components\Inc\motor.h</FilePath>
+            </File>
+            <File>
+              <FileName>daemon.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\Components\Inc\daemon.h</FilePath>
+            </File>
+            <File>
+              <FileName>motor_dji.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\Components\Inc\motor_dji.h</FilePath>
+            </File>
+            <File>
               <FileName>motor_tt.h</FileName>
               <FileType>5</FileType>
               <FilePath>..\..\Components\Inc\motor_tt.h</FilePath>
@@ -712,6 +727,21 @@
               <FileName>dbus.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\..\Components\Src\dbus.c</FilePath>
+            </File>
+            <File>
+              <FileName>motor.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\Components\Src\motor.c</FilePath>
+            </File>
+            <File>
+              <FileName>daemon.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\Components\Src\daemon.c</FilePath>
+            </File>
+            <File>
+              <FileName>motor_dji.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\Components\Src\motor_dji.c</FilePath>
             </File>
             <File>
               <FileName>motor_tt.c</FileName>

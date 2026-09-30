@@ -30,7 +30,7 @@ void panic(fault_reason_t reason)
     /* Freeze task and interrupt activity before forcing outputs safe, so no
      * later software path can restore a PWM compare mode after this point. */
     __disable_irq();
-    pwm_disableAll();
+    pwm_shutdown();
 
     /* GPIO CLR writes the output latch directly and is safe without driver or
      * scheduler state. The board's three LEDs are active high on PC13..PC15. */

@@ -19,6 +19,8 @@ typedef enum {
 void servo_enable(servo_id_t id);
 void servo_disable(servo_id_t id);
 
+/* Actual duty ratio: 0.025 to 0.125 at 50 Hz; servo must be enabled. */
+void servo_setDuty(servo_id_t id, float duty);
 void servo_setPulse(servo_id_t id, uint32_t pulse_us);
 void servo_setAngle(servo_id_t id, float angle_deg);
 

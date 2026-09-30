@@ -107,12 +107,10 @@ void motor_tt_setDuty(motor_tt_id_t id, float ratio)
     }
 
     device = motor_tt_device(id);
-    if (!device->enabled) {
-        return;
-    }
-
     taskENTER_CRITICAL();
-    motor_tt_apply_duty(device, ratio);
+    if (device->enabled) {
+        motor_tt_apply_duty(device, ratio);
+    }
     taskEXIT_CRITICAL();
 }
 

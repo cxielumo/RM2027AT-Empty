@@ -44,6 +44,7 @@
 void bsp_init(void);
 void dbus_init(void);
 void motor_tt_init(void);
+void motor_dji_init(void);
 void servo_init(void);
 
 extern volatile uint8_t usart6_rx_dma_buffer[128];
@@ -184,6 +185,7 @@ int main(void)
   bsp_init();
 
   motor_tt_init();
+  motor_dji_init();
   servo_init();
   dbus_init();
   /* Optional PC simulator mode: dbus_useUartInstead(true); */

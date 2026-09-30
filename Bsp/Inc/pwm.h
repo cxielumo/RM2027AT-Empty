@@ -47,6 +47,6 @@ void pwm_setDuty(pwm_channel_t channel, float duty);
 void pwm_disable(pwm_channel_t channel);
 
 /* Immediately disables every PWM output; safe before initialization. */
-void pwm_disableAll(void);
+void pwm_shutdown(void);
 
 #endif /* RM2027AT_PWM_H */

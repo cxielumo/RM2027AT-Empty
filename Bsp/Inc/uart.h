@@ -28,6 +28,12 @@ typedef struct {
 #define UART_ERROR_OVERRUN  (1U << 2)
 #define UART_ERROR_OVERFLOW (1U << 3)
 
+typedef void (*uart_callback_t)(const uart_frame_t *frame, void *context);
+/* Currently UART6 only, one receiver per port.
+ * Registered port is consumed by callback task; direct receive is rejected.
+ * Callback must return promptly; frame is borrowed. */
+int uart_register(uart_id_t id, uart_callback_t callback, void *context);
+
 int uart_receiveFrame(uart_id_t id, uart_frame_t *out, uint32_t timeout_ms);
 
 size_t uart_write(uart_id_t id, const uint8_t *data, size_t length);

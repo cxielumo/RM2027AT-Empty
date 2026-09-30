@@ -10,7 +10,7 @@ Application → Components → Bsp → ThirdParty + ATWP生成
 ```
 
 - **Application**：默认用户入口为 `void robot_main(void *args)`，位于 `Application/Src/robot_main.c`。在此实现机器人业务；启动装配在 `project/src/main.c`。
-- **Components**：遥控器 DBUS、TT 直流电机及舵机，位于 `Components/Inc`、`Components/Src`；初始化由 `main()` 直接装配。
+- **Components**：遥控器 DBUS、TT 直流电机、大疆 CAN 电机及舵机，位于 `Components/Inc`、`Components/Src`；初始化由 `main()` 直接装配。
 - **Bsp**：板级映射、PWM、CAN、UART、ADC、LED、OS 线程接口，位于 `Bsp/Inc`、`Bsp/Src`。
 - **Algorithm**：PID、斜坡、数学工具和环形缓冲，不依赖硬件或上层模块，位于 `Algorithm/Inc`、`Algorithm/Src`。
 - **ThirdParty + ATWP生成**：FreeRTOS、AT32 外设库、生成的启动/外设代码和中断接入，位于 `ThirdParty`、`libraries`、`project`。
@@ -25,9 +25,11 @@ Application → Components → Bsp → ThirdParty + ATWP生成
 
 ## 开始使用
 
-1. 在 `Application/Src/robot_main.c` 编写用户业务入口。可通过 `dbus_snapshot()` 获取遥控器快照，并使用 `os_delay()` 安排任务执行。
+1. 在 `Application/Src/robot_main.c` 编写用户业务入口。可通过 `dbus_get()` 获取遥控器快照，并使用 `os_delay()` 安排任务执行。
 2. 查看 [API 设计说明](docs/API设计说明.md) 了解接口、错误处理、资源和调用约束。
 3. 查看 [框架设计方案](docs/框架设计方案.md) 及 [功能引脚对应](docs/功能引脚对应.md) 了解分层和板级映射。
+
+DBUS 的 `channel[4]` 保持数组形式，`wheel` 提供中心归零、死区处理后的 [-1,1] 值。键盘通过 `keys & DBUS_KEY_W` 等掩码判断；使用输入前检查 `valid` 和 `online`。
 
 ## 构建入口
 
@@ -35,3 +37,11 @@ FreeRTOS V11.3.1 源码已作为普通目录提交，直接下载 GitHub ZIP 即
 
 - **CMake / GCC**：根目录提供 `CMakePresets.json`，可用 `cmake --preset Debug` 配置、`cmake --build --preset Debug` 构建；Release 对应 `--preset Release`。工具链定义在 `cmake/gcc-arm-none-eabi.cmake`。
 - **Keil**：使用 `project/MDK_V5/RM2027AT.uvprojx` 打开工程。
+
+大疆电机支持 M2006/C610、M3508/C620 和 GM6020 电流模式，配置与调用见 [大疆电机驱动](docs/大疆电机驱动.md)。
+
+统一停止全部 TT 和大疆电机：包含 Components/Inc/motor.h 后调用 motor_shutdown()。
+
+## 示例程序
+
+[robot_main.c](Application/Src/robot_main.c) 是最小 M3508/C620 定速 PID 示例：CAN1、ID 1，默认 `target_rpm=500`，每 10 ms 根据 `motor.measure.speed_rpm` 计算并发送电流。`current` 为最新指令。示例不做离线判断或 PID 重置；驱动自身的反馈与命令超时行为保持不变。PID 参数和电机配置需按实际硬件调整。

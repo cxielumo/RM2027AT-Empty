@@ -178,3 +178,9 @@ void servo_setAngle(servo_id_t id, float angle_deg)
     taskEXIT_CRITICAL();
 }
 
+
+void servo_setDuty(servo_id_t id, float duty)
+{
+    if (!isfinite(duty) || duty < 0.025f || duty > 0.125f) return;
+    servo_setPulse(id, (uint32_t)floor((double)duty * SERVO_PERIOD_US + 0.5));
+}
